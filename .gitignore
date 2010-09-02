@@ -6,3 +6,4 @@
 *.so
 *.gem
 *.tmproj
+*.dSYM

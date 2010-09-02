@@ -64,6 +64,11 @@ typedef unsigned __int64 uint64_t;
 
 #define ZMQ_ERROR rb_raise(rb_eRuntimeError, "%s", zmq_strerror (zmq_errno ()));
 
+#define GET_ZMQ_SOCKET \
+    void * s; \
+    Data_Get_Struct (self_, void, s); \
+    Check_Socket (s);
+
 VALUE socket_type;
 
 /*
@@ -780,11 +785,8 @@ static VALUE socket_getsockopt (VALUE self_, VALUE option_)
 {
     int rc = 0;
     VALUE retval;
-    void * s;
-    
-    Data_Get_Struct (self_, void, s);
-    Check_Socket (s);
-  
+    GET_ZMQ_SOCKET
+
     switch (NUM2INT (option_)) {
     case ZMQ_RCVMORE:
     case ZMQ_HWM:
@@ -1011,10 +1013,7 @@ static VALUE socket_setsockopt (VALUE self_, VALUE option_,
 {
 
     int rc = 0;
-    void * s;
-
-    Data_Get_Struct (self_, void, s);
-    Check_Socket (s);
+    GET_ZMQ_SOCKET
 
     switch (NUM2INT (option_)) {
     case ZMQ_HWM:
@@ -1082,9 +1081,7 @@ static VALUE socket_setsockopt (VALUE self_, VALUE option_,
  */
 static VALUE socket_bind (VALUE self_, VALUE addr_)
 {
-    void * s;
-    Data_Get_Struct (self_, void, s);
-    Check_Socket (s);
+    GET_ZMQ_SOCKET
 
     int rc = zmq_bind (s, rb_string_value_cstr (&addr_));
     if (rc != 0) {
@@ -1125,9 +1122,7 @@ static VALUE socket_bind (VALUE self_, VALUE addr_)
  */
 static VALUE socket_connect (VALUE self_, VALUE addr_)
 {
-    void * s;
-    Data_Get_Struct (self_, void, s);
-    Check_Socket (s);
+    GET_ZMQ_SOCKET
 
     int rc = zmq_connect (s, rb_string_value_cstr (&addr_));
     if (rc != 0) {
@@ -1197,9 +1192,7 @@ static VALUE socket_send (int argc_, VALUE* argv_, VALUE self_)
     
     rb_scan_args (argc_, argv_, "11", &msg_, &flags_);
 
-    void * s;
-    Data_Get_Struct (self_, void, s);
-    Check_Socket (s);
+    GET_ZMQ_SOCKET
 
     Check_Type (msg_, T_STRING);
 
@@ -1287,9 +1280,7 @@ static VALUE socket_recv (int argc_, VALUE* argv_, VALUE self_)
     
     rb_scan_args (argc_, argv_, "01", &flags_);
 
-    void * s;
-    Data_Get_Struct (self_, void, s);
-    Check_Socket (s);
+    GET_ZMQ_SOCKET
 
     int flags = NIL_P (flags_) ? 0 : NUM2INT (flags_);
 
