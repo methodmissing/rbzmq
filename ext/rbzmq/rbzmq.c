@@ -69,7 +69,7 @@ typedef unsigned __int64 uint64_t;
     Data_Get_Struct (self_, void, s); \
     Check_Socket (s);
 
-VALUE socket_type;
+VALUE socket_type, context_type;
 
 /*
  * Document-class: ZMQ
@@ -126,10 +126,11 @@ static VALUE context_alloc (VALUE class_)
 static VALUE context_initialize (int argc_, VALUE* argv_, VALUE self_)
 {
     VALUE io_threads;
+    void *ctx;
     rb_scan_args (argc_, argv_, "01", &io_threads);
 
     assert (!DATA_PTR (self_));
-    void *ctx = zmq_init (NIL_P (io_threads) ? 1 : NUM2INT (io_threads));
+    ctx = zmq_init (NIL_P (io_threads) ? 1 : NUM2INT (io_threads));
     if (!ctx) {
         ZMQ_ERROR
         return Qnil;
@@ -182,7 +183,8 @@ typedef VALUE(*iterfunc)(ANYARGS);
 
 static VALUE poll_add_item(VALUE io_, void *ps_) {
     struct poll_state *state = (struct poll_state *)ps_;
-
+    OpenFile *fptr;
+    zmq_pollitem_t *item;
     long i;
     
     for (i = 0; i < RARRAY_LEN (state->io_objects); i++) {
@@ -196,7 +198,6 @@ static VALUE poll_add_item(VALUE io_, void *ps_) {
                 return Qnil;
             }
 
-            OpenFile *fptr;
             GetOpenFile (io_, fptr);
             
             if (state->event == ZMQ_POLLOUT &&
@@ -215,7 +216,7 @@ static VALUE poll_add_item(VALUE io_, void *ps_) {
     /* Not found in array.  Add a new poll item. */
     rb_ary_push (state->io_objects, io_);
     
-    zmq_pollitem_t *item = &state->items[state->nitems];
+    item = &state->items[state->nitems];
     state->nitems++;
 
     item->events = state->event;
@@ -233,7 +234,6 @@ static VALUE poll_add_item(VALUE io_, void *ps_) {
         GetOpenFile (io_, fptr);
         item->fd = fileno (rb_io_stdio_file (fptr));
 #else
-        OpenFile *fptr;
         
         GetOpenFile (io_, fptr);
         
@@ -289,6 +289,7 @@ static VALUE internal_select(VALUE argval)
 
     int rc, nitems, i;
     zmq_pollitem_t *item;
+    VALUE read_active, write_active, err_active;
 
     struct poll_state ps;
     ps.nitems = 0;
@@ -334,9 +335,9 @@ static VALUE internal_select(VALUE argval)
     else if (rc == 0)
         return Qnil;
     
-    VALUE read_active = rb_ary_new ();
-    VALUE write_active = rb_ary_new ();
-    VALUE err_active = rb_ary_new ();
+    read_active = rb_ary_new ();
+    write_active = rb_ary_new ();
+    err_active = rb_ary_new ();
     
     for (i = 0, item = &ps.items[0]; i < nitems; i++, item++) {
         if (item->revents != 0) {
@@ -386,9 +387,9 @@ static VALUE module_select_internal(VALUE readset, VALUE writeset, VALUE errset,
 static VALUE module_select (int argc_, VALUE* argv_, VALUE self_)
 {
     VALUE readset, writeset, errset, timeout;
-    rb_scan_args (argc_, argv_, "13", &readset, &writeset, &errset, &timeout);
-
     long timeout_usec;
+
+    rb_scan_args (argc_, argv_, "13", &readset, &writeset, &errset, &timeout);
 
     if (!NIL_P (readset)) Check_Type (readset, T_ARRAY);
     if (!NIL_P (writeset)) Check_Type (writeset, T_ARRAY);
@@ -430,8 +431,9 @@ static void socket_free (void *s)
 static VALUE context_socket (VALUE self_, VALUE type_)
 {
     void * c = NULL;
+    void * s;
     Data_Get_Struct (self_, void, c);
-    void * s = zmq_socket (c, NUM2INT (type_));
+    s = zmq_socket (c, NUM2INT (type_));
     if (!s) {
         ZMQ_ERROR
         return Qnil;
@@ -1013,6 +1015,7 @@ static VALUE socket_setsockopt (VALUE self_, VALUE option_,
 {
 
     int rc = 0;
+    uint64_t optval;
     GET_ZMQ_SOCKET
 
     switch (NUM2INT (option_)) {
@@ -1025,9 +1028,9 @@ static VALUE socket_setsockopt (VALUE self_, VALUE option_,
     case ZMQ_SNDBUF:
     case ZMQ_RCVBUF:
         {
-            uint64_t optval = FIX2LONG (optval_);
+            optval = FIX2LONG (optval_);
 
-            //  Forward the code to native 0MQ library.
+            /* Forward the code to native 0MQ library. */
             rc = zmq_setsockopt (s, NUM2INT (option_),
                 (void*) &optval, sizeof (optval));
         }
@@ -1037,7 +1040,7 @@ static VALUE socket_setsockopt (VALUE self_, VALUE option_,
     case ZMQ_SUBSCRIBE:
     case ZMQ_UNSUBSCRIBE:
 
-        //  Forward the code to native 0MQ library.
+        /* Forward the code to native 0MQ library. */
         rc = zmq_setsockopt (s, NUM2INT (option_),
 	    (void *) StringValueCStr (optval_), RSTRING_LEN (optval_));
         break;
@@ -1081,9 +1084,10 @@ static VALUE socket_setsockopt (VALUE self_, VALUE option_,
  */
 static VALUE socket_bind (VALUE self_, VALUE addr_)
 {
+    int rc;
     GET_ZMQ_SOCKET
 
-    int rc = zmq_bind (s, rb_string_value_cstr (&addr_));
+    rc = zmq_bind (s, rb_string_value_cstr (&addr_));
     if (rc != 0) {
         ZMQ_ERROR
         return Qnil;
@@ -1122,9 +1126,10 @@ static VALUE socket_bind (VALUE self_, VALUE addr_)
  */
 static VALUE socket_connect (VALUE self_, VALUE addr_)
 {
+    int rc;
     GET_ZMQ_SOCKET
 
-    int rc = zmq_connect (s, rb_string_value_cstr (&addr_));
+    rc = zmq_connect (s, rb_string_value_cstr (&addr_));
     if (rc != 0) {
         ZMQ_ERROR
         return Qnil;
@@ -1189,17 +1194,18 @@ static VALUE zmq_send_blocking (void* args_)
 static VALUE socket_send (int argc_, VALUE* argv_, VALUE self_)
 {
     VALUE msg_, flags_;
-    
-    rb_scan_args (argc_, argv_, "11", &msg_, &flags_);
+    int flags, rc;
+    zmq_msg_t msg;
 
     GET_ZMQ_SOCKET
 
+    rb_scan_args (argc_, argv_, "11", &msg_, &flags_);
+
     Check_Type (msg_, T_STRING);
 
-    int flags = NIL_P (flags_) ? 0 : NUM2INT (flags_);
+    flags = NIL_P (flags_) ? 0 : NUM2INT (flags_);
 
-    zmq_msg_t msg;
-    int rc = zmq_msg_init_size (&msg, RSTRING_LEN (msg_));
+    rc = zmq_msg_init_size (&msg, RSTRING_LEN (msg_));
     if (rc != 0) {
         ZMQ_ERROR
         return Qnil;
@@ -1276,16 +1282,17 @@ static VALUE zmq_recv_blocking (void* args_)
  */
 static VALUE socket_recv (int argc_, VALUE* argv_, VALUE self_)
 {
-    VALUE flags_;
-    
-    rb_scan_args (argc_, argv_, "01", &flags_);
+    VALUE flags_, message;
+    int flags, rc;
+    zmq_msg_t msg;
 
     GET_ZMQ_SOCKET
 
-    int flags = NIL_P (flags_) ? 0 : NUM2INT (flags_);
+    rb_scan_args (argc_, argv_, "01", &flags_);
 
-    zmq_msg_t msg;
-    int rc = zmq_msg_init (&msg);
+    flags = NIL_P (flags_) ? 0 : NUM2INT (flags_);
+
+    rc = zmq_msg_init (&msg);
     assert (rc == 0);
 
 #ifdef HAVE_RUBY_INTERN_H
@@ -1314,7 +1321,7 @@ static VALUE socket_recv (int argc_, VALUE* argv_, VALUE self_)
         return Qnil;
     }
 
-    VALUE message = rb_str_new ((char*) zmq_msg_data (&msg),
+    message = rb_str_new ((char*) zmq_msg_data (&msg),
         zmq_msg_size (&msg));
     rc = zmq_msg_close (&msg);
     assert (rc == 0);
@@ -1354,7 +1361,7 @@ void Init_zmq ()
     rb_define_singleton_method (zmq_module, "version", module_version, 0);
     rb_define_singleton_method (zmq_module, "select", module_select, -1);
 
-    VALUE context_type = rb_define_class_under (zmq_module, "Context",
+    context_type = rb_define_class_under (zmq_module, "Context",
         rb_cObject);
     rb_define_alloc_func (context_type, context_alloc);
     rb_define_method (context_type, "initialize", context_initialize, -1);
@@ -1397,7 +1404,7 @@ void Init_zmq ()
     rb_define_const (zmq_module, "PUSH", INT2NUM (ZMQ_PUSH));
     rb_define_const (zmq_module, "PULL", INT2NUM (ZMQ_PULL));
 
-    //  Obsolete.
+    /* Obsolete. */
     rb_define_const (zmq_module, "UPSTREAM", INT2NUM (ZMQ_UPSTREAM));
     rb_define_const (zmq_module, "DOWNSTREAM", INT2NUM (ZMQ_DOWNSTREAM));
 }

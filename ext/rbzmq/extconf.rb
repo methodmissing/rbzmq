@@ -20,6 +20,7 @@ require 'mkmf'
 dir_config('zmq')
 if have_library('zmq', 'zmq_init')
   puts "Cool, I found your zmq install..."
+  $defs.push("-pedantic")
   create_makefile("zmq")
 else
   raise "Couldn't find zmq library. try setting --with-zmq-dir=<path> to tell me where it is."
