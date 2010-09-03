@@ -17,57 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <assert.h>
-#include <string.h>
-#include <ruby.h>
-#ifdef HAVE_RUBY_IO_H
-#include <ruby/io.h>
-#else
-#include <rubyio.h>
-#endif
-#include <zmq.h>
-
-#if defined _MSC_VER
-#ifndef int8_t
-typedef __int8 int8_t;
-#endif
-#ifndef int16_t
-typedef __int16 int16_t;
-#endif
-#ifndef int32_t
-typedef __int32 int32_t;
-#endif
-#ifndef int64_t
-typedef __int64 int64_t;
-#endif
-#ifndef uint8_t
-typedef unsigned __int8 uint8_t;
-#endif
-#ifndef uint16_t
-typedef unsigned __int16 uint16_t;
-#endif
-#ifndef uint32_t
-typedef unsigned __int32 uint32_t;
-#endif
-#ifndef uint64_t
-typedef unsigned __int64 uint64_t;
-#endif
-#else
-#include <stdint.h>
-#endif
-
-#define Check_Socket(__socket) \
-    do {\
-        if ((__socket) == NULL)\
-            rb_raise (rb_eIOError, "closed socket");\
-    } while(0)
-
-#define ZMQ_ERROR rb_raise(rb_eRuntimeError, "%s", zmq_strerror (zmq_errno ()));
-
-#define GET_ZMQ_SOCKET \
-    void * s; \
-    Data_Get_Struct (self_, void, s); \
-    Check_Socket (s);
+#include <rbzmq.h>
 
 VALUE socket_type, context_type;
 
