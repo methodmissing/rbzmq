@@ -318,11 +318,8 @@ static VALUE module_select_internal(VALUE readset, VALUE writeset, VALUE errset,
     arg.errset = errset;
     arg.timeout_usec = timeout_usec;
 
-#ifdef RUBY19
-    return rb_ensure(internal_select, (VALUE)&arg, (void (*)())ruby_xfree, (VALUE)arg.items);
-#else
+    /* same signature since 1.9.2 head */
     return rb_ensure(internal_select, (VALUE)&arg, (VALUE (*)())ruby_xfree, (VALUE)arg.items);
-#endif
 }
 
 /*
