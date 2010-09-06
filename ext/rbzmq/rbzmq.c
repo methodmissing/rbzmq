@@ -50,8 +50,9 @@ static VALUE module_version (VALUE self_)
 
 static void context_free (void *ctx)
 {
+    int rc = 0;
     if (ctx) {
-       int rc = zmq_term (ctx);
+       rc = zmq_term (ctx);
        assert (rc == 0);
     }
 }
@@ -108,11 +109,12 @@ static VALUE context_initialize (int argc_, VALUE* argv_, VALUE self_)
  */
 static VALUE context_close (VALUE self_)
 {
+    int rc = 0;
     void * ctx = NULL;
     Data_Get_Struct (self_, void, ctx);
     
     if (ctx != NULL) {
-        int rc = zmq_term (ctx);
+        rc = zmq_term (ctx);
         assert (rc == 0);
 
         DATA_PTR (self_) = NULL;
@@ -235,7 +237,8 @@ static VALUE internal_select(VALUE argval)
 {
     struct select_arg *arg = (struct select_arg *)argval;
 
-    int rc, nitems, i;
+    int rc = 0;
+    int nitems, i;
     zmq_pollitem_t *item;
     VALUE read_active, write_active, err_active;
 
@@ -301,7 +304,7 @@ static VALUE internal_select(VALUE argval)
 
 static VALUE module_select_internal(VALUE readset, VALUE writeset, VALUE errset, long timeout_usec)
 {
-    int nitems;
+    VALUE nitems;
     struct select_arg arg;
 
     /* Conservative estimate for nitems before we traverse the lists. */
@@ -349,7 +352,7 @@ static VALUE module_select (int argc_, VALUE* argv_, VALUE self_)
 
 static void socket_free (void *s)
 {
-    int rc;
+    int rc = 0;
     if (s) {
        rc = zmq_close (s);
        assert (rc == 0);
@@ -1020,7 +1023,7 @@ static VALUE socket_setsockopt (VALUE self_, VALUE option_,
  */
 static VALUE socket_bind (VALUE self_, VALUE addr_)
 {
-    int rc;
+    int rc = 0;
     GET_ZMQ_SOCKET
 
     rc = zmq_bind (s, rb_string_value_cstr (&addr_));
@@ -1059,7 +1062,7 @@ static VALUE socket_bind (VALUE self_, VALUE addr_)
  */
 static VALUE socket_connect (VALUE self_, VALUE addr_)
 {
-    int rc;
+    int rc = 0;
     GET_ZMQ_SOCKET
 
     rc = zmq_connect (s, rb_string_value_cstr (&addr_));
@@ -1121,7 +1124,8 @@ static VALUE zmq_send_blocking (void* args_)
 static VALUE socket_send (int argc_, VALUE* argv_, VALUE self_)
 {
     VALUE msg_, flags_;
-    int flags, rc;
+    int rc = 0;
+    int flags;
     zmq_msg_t msg;
 
     GET_ZMQ_SOCKET
@@ -1203,7 +1207,8 @@ static VALUE zmq_recv_blocking (void* args_)
 static VALUE socket_recv (int argc_, VALUE* argv_, VALUE self_)
 {
     VALUE flags_, message;
-    int flags, rc;
+    int rc = 0;
+    int flags;
     zmq_msg_t msg;
 
     GET_ZMQ_SOCKET
@@ -1261,7 +1266,7 @@ static VALUE socket_recv (int argc_, VALUE* argv_, VALUE self_)
 static VALUE socket_close (VALUE self_)
 {
     void * s = NULL;
-    int rc;
+    int rc = 0;
     Data_Get_Struct (self_, void, s);
     if (s != NULL) {
         rc = zmq_close (s);

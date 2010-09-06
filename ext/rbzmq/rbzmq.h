@@ -119,7 +119,7 @@ rb_thread_blocking_region(
       retry: \
         (rc) = func((s), (msg), fl); \
         if ((rc) < 0) { \
-          if (errno == EAGAIN) { \
+          if (zmq_errno() == EAGAIN) { \
              rb_thread_polling(); \
              goto retry; \
           } \
@@ -131,8 +131,7 @@ rb_thread_blocking_region(
 #define ZMQ_RECV_BLOCKING(rc, s, msg, fl) ZMQ_SEND_RECV_BLOCKING(zmq_recv, rc, s, msg, fl)
 #else
 #define RUBY19
-#define TRAP_BEG
-#define TRAP_END
+#include <ruby/backward/rubysig.h>
 #define ZMQ_SEND_BLOCKING(rc, s, msg, fl) (rc) = zmq_send((s), (msg), (fl));
 #define ZMQ_RECV_BLOCKING(rc, s, msg, fl) (rc) = zmq_recv((s), (msg), (fl));
 #endif /* ! HAVE_RB_THREAD_BLOCKING_REGION */
