@@ -64,10 +64,19 @@ typedef unsigned __int64 uint64_t;
 
 #define ZMQ_ERROR rb_raise(rb_eRuntimeError, "%s", zmq_strerror (zmq_errno ()));
 
+#define RETURN_ZMQ_ERROR \
+    ZMQ_ERROR \
+    return Qnil;
+
 #define GET_ZMQ_SOCKET \
     void * s; \
     Data_Get_Struct (self_, void, s); \
     Check_Socket (s);
+
+#define ZMQ_CHECK_RETURN \
+    if (rc != 0) { \
+        RETURN_ZMQ_ERROR \
+    }
 
 #if defined(__GNUC__) && (__GNUC__ >= 3)
 #define RB_ZMQ_UNUSED __attribute__ ((unused))
@@ -85,6 +94,7 @@ typedef unsigned __int64 uint64_t;
 
 #ifndef HAVE_RB_THREAD_BLOCKING_REGION
 
+#define RUBY18
 #include <rubysig.h>
 #define RUBY_UBF_IO ((rb_unblock_function_t *)-1)
 typedef void rb_unblock_function_t(void *);
@@ -103,5 +113,26 @@ rb_thread_blocking_region(
 
   return rv;
 }
-
+#define ZMQ_SEND_RECV_BLOCKING(func, rc, s, msg, fl) \
+    if (!rb_thread_alone()){ \
+      if ((fl) == 0) (fl) = ZMQ_NOBLOCK; \
+      retry: \
+        (rc) = func((s), (msg), fl); \
+        if ((rc) < 0) { \
+          if (errno == EAGAIN) { \
+             rb_thread_polling(); \
+             goto retry; \
+          } \
+        } \
+     }else{ \
+       (rc) = func((s), (msg), fl); \
+     }
+#define ZMQ_SEND_BLOCKING(rc, s, msg, fl) ZMQ_SEND_RECV_BLOCKING(zmq_send, rc, s, msg, fl)
+#define ZMQ_RECV_BLOCKING(rc, s, msg, fl) ZMQ_SEND_RECV_BLOCKING(zmq_recv, rc, s, msg, fl)
+#else
+#define RUBY19
+#define TRAP_BEG
+#define TRAP_END
+#define ZMQ_SEND_BLOCKING(rc, s, msg, fl) (rc) = zmq_send((s), (msg), (fl));
+#define ZMQ_RECV_BLOCKING(rc, s, msg, fl) (rc) = zmq_recv((s), (msg), (fl));
 #endif /* ! HAVE_RB_THREAD_BLOCKING_REGION */

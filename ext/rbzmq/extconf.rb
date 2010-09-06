@@ -18,6 +18,7 @@
 
 require 'mkmf'
 dir_config('zmq')
+have_func('rb_thread_blocking_region')
 if have_library('zmq', 'zmq_init')
   puts "Cool, I found your zmq install..."
   $defs.push("-pedantic")
