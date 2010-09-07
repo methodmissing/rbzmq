@@ -11,6 +11,9 @@ desc 'Run rbzmq tests.'
 Rake::TestTask.new(:test) do |t|
   t.libs = [ZMQ_ROOT]
   t.pattern = 'test/test_*.rb'
+  t.ruby_opts << '-rtest'
+  t.libs << 'test'
+  t.warning = true
   t.verbose = true
 end
 task :test => :build

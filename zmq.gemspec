@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.homepage = 'http://www.zeromq.org/bindings:ruby'
   s.summary = 'Ruby API for ZeroMQ'
   s.extensions = 'ext/rbzmq/extconf.rb'
-  s.files = Dir.glob("{ext,perf}/**/*") + %w[README Rakefile zmq.gemspec]
+  s.files = Dir.glob("{ext,perf,test}/**/*") + %w[README Rakefile zmq.gemspec]
   s.has_rdoc = true
   s.extra_rdoc_files = Dir['ext/rbzmq/*.c']
 end
