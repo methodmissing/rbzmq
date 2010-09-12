@@ -27,14 +27,34 @@ rb_thread_blocking_region(
 
   return rv;
 }
+
+/*
+*  References
+*  http://github.com/methodmissing/rbzmq/commit/c3da4cd14ff8be39ac3bf0f2735e3039ef806584
+*  http://www.mail-archive.com/zeromq-dev@lists.zeromq.org/msg03131.html
+*/
+
+#ifdef ZMQ_FD
+#define ZMQ_HOOK_FD(s) \
+    int fd; \
+    size_t optsiz = sizeof(fd); \
+    rc = zmq_getsockopt((s), ZMQ_FD, &fd, &optsiz); \
+    ZMQ_CHECK_RETURN
+#define ZMQ_THREAD_WAIT rb_thread_wait_fd(fd);
+#else
+#define ZMQ_HOOK_FD(s)
+#define ZMQ_THREAD_WAIT rb_thread_polling();
+#endif
+
 #define ZMQ_SEND_RECV_BLOCKING(func, rc, s, msg, fl) \
+    ZMQ_HOOK_FD((s)) \
     if (!rb_thread_alone()){ \
       if ((fl) == 0) (fl) = (fl) | ZMQ_NOBLOCK; \
       retry: \
         (rc) = func((s), (msg), fl); \
         if ((rc) < 0) { \
           if (zmq_errno() == EAGAIN) { \
-             rb_thread_polling(); \
+             ZMQ_THREAD_WAIT \
              goto retry; \
           } \
         } \
