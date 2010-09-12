@@ -36,8 +36,6 @@ s.setsockopt(ZMQ::SUBSCRIBE, "");
 
 s.bind(bind_to);
 
-msg = s.recv(0)
-    
 start_time = Time.now
    
 message_count.times do
