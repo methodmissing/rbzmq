@@ -73,8 +73,6 @@ typedef unsigned __int64 uint64_t;
         RETURN_ZMQ_ERROR \
     }
 
-#define rb_gc_unmark(obj) FL_UNSET((VALUE)obj, FL_MARK)
-
 #ifndef HAVE_RB_THREAD_BLOCKING_REGION
 #include "ruby18.h"
 #else

@@ -1069,7 +1069,7 @@ static VALUE socket_connect (VALUE self_, VALUE addr_)
 }
 
 void free_zmq_message(void *data, void *hint){
-    rb_gc_unmark(hint);
+    FL_UNSET((VALUE)hint, FL_MARK);
 }
 
 struct zmq_send_recv_args {
@@ -1136,12 +1136,9 @@ static VALUE socket_send (int argc_, VALUE* argv_, VALUE self_)
 
     flags = NIL_P (flags_) ? 0 : NUM2INT (flags_);
 
-    rb_gc_mark(msg_);
     rc = zmq_msg_init_data(&msg, RSTRING_PTR(msg_), RSTRING_LEN(msg_), free_zmq_message, (void*)msg_);
-    if (rc != 0) { \
-        rb_gc_unmark(msg_);
-        RETURN_ZMQ_ERROR \
-    }
+    ZMQ_CHECK_RETURN
+    rb_gc_mark(msg_);
 
     if (!(flags & ZMQ_NOBLOCK)) {
         struct zmq_send_recv_args send_args;
