@@ -16,6 +16,7 @@
 #    You should have received a copy of the Lesser GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+$:.unshift('.')
 require 'ext/rbzmq/zmq'
 
 if ARGV.length != 3
