@@ -73,6 +73,8 @@ typedef unsigned __int64 uint64_t;
         RETURN_ZMQ_ERROR \
     }
 
+#define rb_gc_unmark(obj) FL_UNSET((VALUE)obj, FL_MARK)
+
 #if defined(__GNUC__) && (__GNUC__ >= 3)
 #define RB_ZMQ_UNUSED __attribute__ ((unused))
 #else
