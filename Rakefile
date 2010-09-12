@@ -21,8 +21,10 @@ task :test => :build
 namespace :build do
   file "#{ZMQ_ROOT}/rbzmq.c"
   file "#{ZMQ_ROOT}/rbzmq.h"
+  file "#{ZMQ_ROOT}/ruby18.h"
+  file "#{ZMQ_ROOT}/ruby19.h"
   file "#{ZMQ_ROOT}/extconf.rb"
-  file "#{ZMQ_ROOT}/Makefile" => %W(#{ZMQ_ROOT}/rbzmq.c #{ZMQ_ROOT}/rbzmq.h #{ZMQ_ROOT}/extconf.rb) do
+  file "#{ZMQ_ROOT}/Makefile" => %W(#{ZMQ_ROOT}/rbzmq.c #{ZMQ_ROOT}/rbzmq.h #{ZMQ_ROOT}/ruby18.h #{ZMQ_ROOT}/ruby19.h #{ZMQ_ROOT}/extconf.rb) do
     Dir.chdir(ZMQ_ROOT) do
       ruby 'extconf.rb'
     end
