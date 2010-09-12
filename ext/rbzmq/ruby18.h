@@ -46,17 +46,22 @@ rb_thread_blocking_region(
     size_t optsiz = sizeof(fd); \
     rc = zmq_getsockopt((s), ZMQ_FD, &fd, &optsiz); \
     ZMQ_CHECK_RETURN
-#define ZMQ_THREAD_WAIT rb_thread_wait_fd(fd);
+#define ZMQ_THREAD_WAIT_READBLE rb_thread_wait_fd(fd);
+#define ZMQ_THREAD_WAIT_WRITABLE rb_thread_fd_writable(fd);
+#define ZMQ_THREAD_WAIT
 #else
 #define ZMQ_HOOK_FD(s)
+#define ZMQ_THREAD_WAIT_READBLE
+#define ZMQ_THREAD_WAIT_WRITABLE
 #define ZMQ_THREAD_WAIT rb_thread_polling();
 #endif
 
-#define ZMQ_SEND_RECV_BLOCKING(func, rc, s, msg, fl) \
+#define ZMQ_SEND_RECV_BLOCKING(func, waiter, rc, s, msg, fl) \
     ZMQ_HOOK_FD((s)) \
     if (!rb_thread_alone()){ \
       if ((fl) == 0) (fl) = (fl) | ZMQ_NOBLOCK; \
       retry: \
+        waiter \
         (rc) = func((s), (msg), fl); \
         if ((rc) < 0) { \
           if (zmq_errno() == EAGAIN) { \
@@ -67,5 +72,5 @@ rb_thread_blocking_region(
      }else{ \
        (rc) = func((s), (msg), fl); \
      }
-#define ZMQ_SEND_BLOCKING(rc, s, msg, fl) ZMQ_SEND_RECV_BLOCKING(zmq_send, rc, s, msg, fl)
-#define ZMQ_RECV_BLOCKING(rc, s, msg, fl) ZMQ_SEND_RECV_BLOCKING(zmq_recv, rc, s, msg, fl)
+#define ZMQ_SEND_BLOCKING(rc, s, msg, fl) ZMQ_SEND_RECV_BLOCKING(zmq_send, ZMQ_THREAD_WAIT_WRITABLE, rc, s, msg, fl)
+#define ZMQ_RECV_BLOCKING(rc, s, msg, fl) ZMQ_SEND_RECV_BLOCKING(zmq_recv, ZMQ_THREAD_WAIT_READBLE, rc, s, msg, fl)
