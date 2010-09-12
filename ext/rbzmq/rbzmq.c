@@ -1068,6 +1068,10 @@ static VALUE socket_connect (VALUE self_, VALUE addr_)
     return Qnil;
 }
 
+void free_zmq_message(void *data, void *hint){
+    FL_UNSET((VALUE)hint, FL_MARK);
+}
+
 struct zmq_send_recv_args {
     void *socket;
     zmq_msg_t *msg;
@@ -1077,7 +1081,6 @@ struct zmq_send_recv_args {
 
 static VALUE zmq_send_blocking (void* args_)
 {
-
     struct zmq_send_recv_args *send_args = (struct zmq_send_recv_args *)args_;
     ZMQ_SEND_BLOCKING(send_args->rc, send_args->socket, send_args->msg, send_args->flags)
     return Qnil;
@@ -1133,9 +1136,9 @@ static VALUE socket_send (int argc_, VALUE* argv_, VALUE self_)
 
     flags = NIL_P (flags_) ? 0 : NUM2INT (flags_);
 
-    rc = zmq_msg_init_size (&msg, RSTRING_LEN (msg_));
+    rb_gc_mark(msg_);
+    rc = zmq_msg_init_data(&msg, RSTRING_PTR(msg_), RSTRING_LEN(msg_), free_zmq_message, (void*)msg_);
     ZMQ_CHECK_RETURN
-    memcpy (zmq_msg_data (&msg), RSTRING_PTR (msg_), RSTRING_LEN (msg_));
 
     if (!(flags & ZMQ_NOBLOCK)) {
         struct zmq_send_recv_args send_args;
