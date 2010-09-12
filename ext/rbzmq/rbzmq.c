@@ -1138,7 +1138,7 @@ static VALUE socket_send (int argc_, VALUE* argv_, VALUE self_)
 
     rc = zmq_msg_init_data(&msg, RSTRING_PTR(msg_), RSTRING_LEN(msg_), free_zmq_message, (void*)msg_);
     ZMQ_CHECK_RETURN
-    rb_gc_mark(msg_);
+    FL_SET(msg_, FL_MARK);
 
     if (!(flags & ZMQ_NOBLOCK)) {
         struct zmq_send_recv_args send_args;
