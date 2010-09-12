@@ -16,7 +16,7 @@
 #    You should have received a copy of the Lesser GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-require 'zmq'
+require 'ext/rbzmq/zmq'
 
 if ARGV.length != 3
 	puts "usage: local_thr <bind-to> <message-size> <message-count>"
@@ -40,7 +40,7 @@ msg = s.recv(0)
     
 start_time = Time.now
    
-for i in 1...message_count.to_i do
+message_count.times do
     msg = s.recv(0)
 end
 

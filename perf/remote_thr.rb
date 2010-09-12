@@ -16,7 +16,7 @@
 #    You should have received a copy of the Lesser GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-require 'zmq'
+require 'ext/rbzmq/zmq'
 
 if ARGV.length != 3
 	puts "usage: remote_thr <connect-to> <message-size> <message-count>"
@@ -37,7 +37,7 @@ s.connect(connect_to);
 
 msg = "#{'0'*message_size}"
 
-for i in 0...message_count do
+message_count.times do
 	s.send(msg, 0)
 end
 

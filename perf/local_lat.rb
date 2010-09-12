@@ -16,7 +16,7 @@
 #    You should have received a copy of the Lesser GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-require 'zmq'
+require 'ext/rbzmq/zmq'
 
 if ARGV.length != 3
 	puts "usage: local_lat <bind-to> <message-size> <roundtrip-count>"
@@ -32,7 +32,7 @@ s = ctx.socket(ZMQ::REP);
 s.setsockopt(ZMQ::HWM, 100);
 s.bind(bind_to);
 
-for i in 0...roundtrip_count do
+roundtrip_count.times do
     msg = s.recv(0)
     s.send(msg, 0)
 end

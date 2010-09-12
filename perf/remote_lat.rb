@@ -16,7 +16,7 @@
 #    You should have received a copy of the Lesser GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-require 'zmq'
+require 'ext/rbzmq/zmq'
 
 if ARGV.length != 3
 	puts "usage: remote_lat <connect-to> <message-size> <roundtrip-count>"
@@ -35,7 +35,7 @@ msg = "#{'0'*message_size}"
 
 start_time = Time.now
 
-for i in 0...roundtrip_count do
+roundtrip_count.times do
     s.send(msg, 0)
     msg = s.recv(0)
 end
