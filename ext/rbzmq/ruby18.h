@@ -29,7 +29,7 @@ rb_thread_blocking_region(
 }
 #define ZMQ_SEND_RECV_BLOCKING(func, rc, s, msg, fl) \
     if (!rb_thread_alone()){ \
-      if ((fl) == 0) (fl) = ZMQ_NOBLOCK; \
+      if ((fl) == 0) (fl) = (fl) | ZMQ_NOBLOCK; \
       retry: \
         (rc) = func((s), (msg), fl); \
         if ((rc) < 0) { \
