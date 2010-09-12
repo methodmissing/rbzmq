@@ -10,6 +10,12 @@
  * presence of threads.
  */
 
+#if defined(__GNUC__) && (__GNUC__ >= 3)
+#define RB_ZMQ_UNUSED __attribute__ ((unused))
+#else
+#define RB_ZMQ_UNUSED
+#endif
+
 #define RUBY_UBF_IO ((rb_unblock_function_t *)-1)
 typedef void rb_unblock_function_t(void *);
 typedef VALUE rb_blocking_function_t(void *);

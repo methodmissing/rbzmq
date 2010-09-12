@@ -75,12 +75,6 @@ typedef unsigned __int64 uint64_t;
 
 #define rb_gc_unmark(obj) FL_UNSET((VALUE)obj, FL_MARK)
 
-#if defined(__GNUC__) && (__GNUC__ >= 3)
-#define RB_ZMQ_UNUSED __attribute__ ((unused))
-#else
-#define RB_ZMQ_UNUSED
-#endif
-
 #ifndef HAVE_RB_THREAD_BLOCKING_REGION
 #include "ruby18.h"
 #else
