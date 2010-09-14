@@ -378,6 +378,7 @@ static VALUE context_socket (VALUE self_, VALUE type_)
     void * c = NULL;
     void * s;
     Data_Get_Struct (self_, void, c);
+    Check_Type (type_, T_FIXNUM);
 
     s = zmq_socket (c, NUM2INT (type_));
     if (!s) {
@@ -733,6 +734,7 @@ static VALUE socket_getsockopt (VALUE self_, VALUE option_)
     int rc = 0;
     VALUE retval;
     GET_ZMQ_SOCKET
+    Check_Type (option_, T_FIXNUM);
 
     switch (NUM2INT (option_)) {
     case ZMQ_RCVMORE:
@@ -956,6 +958,7 @@ static VALUE socket_setsockopt (VALUE self_, VALUE option_,
     int rc = 0;
     uint64_t optval;
     GET_ZMQ_SOCKET
+    Check_Type (option_, T_FIXNUM);
 
     switch (NUM2INT (option_)) {
     case ZMQ_HWM:
@@ -1022,6 +1025,7 @@ static VALUE socket_bind (VALUE self_, VALUE addr_)
 {
     int rc = 0;
     GET_ZMQ_SOCKET
+    Check_Type (addr_, T_STRING);
 
     rc = zmq_bind (s, rb_string_value_cstr (&addr_));
     ZMQ_CHECK_RETURN
@@ -1061,6 +1065,7 @@ static VALUE socket_connect (VALUE self_, VALUE addr_)
 {
     int rc = 0;
     GET_ZMQ_SOCKET
+    Check_Type (addr_, T_STRING);
 
     rc = zmq_connect (s, rb_string_value_cstr (&addr_));
     ZMQ_CHECK_RETURN
